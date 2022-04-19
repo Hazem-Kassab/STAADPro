@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using OSUI = OpenSTAADUI;
+﻿using System.Numerics;
 
 namespace STAADPro
 {
     class Element
     {
+        public bool inMergedElement;
         public Element(int id)
         {
             this.Id = id;
@@ -20,6 +16,8 @@ namespace STAADPro
         public double Length { get; set; }
         public string Profile { get; set; }
         public string Material { get; set; }
+        public Vector3 PositionVector { get; set; }
+        public Vector3 DirectionVector { get; set; }
 
         public override string ToString()
         {
@@ -40,6 +38,11 @@ namespace STAADPro
             element.Profile = staadModel.wrapper.Property.GetBeamSectionName(id);
             element.Material = staadModel.wrapper.Property.GetBeamMaterialName(id);
 
+            element.PositionVector = new Vector3((float)element.StartNode.X, (float)element.StartNode.Y, (float)element.StartNode.Z);
+            
+            element.DirectionVector = new Vector3((float)(element.EndNode.X - element.StartNode.X),
+                                                  (float)(element.EndNode.Y - element.StartNode.Y),
+                                                  (float)(element.EndNode.Z - element.StartNode.Z));
             staadModel.Elements.Add(element);
         }
         
@@ -49,7 +52,20 @@ namespace STAADPro
             int id = staadModel.wrapper.Geometry.GetLastBeamNo();
             Element.CreateElementFromStaad(staadModel, id);
         }
-
+        public bool IsCollinear(Element element)
+        {   
+            float length = Vector3.Cross(DirectionVector, element.DirectionVector).Length();
+            if (length == 0)
+            {
+                Vector3 collinear_vector = Vector3.Subtract(PositionVector, element.PositionVector);
+                length = Vector3.Cross(DirectionVector, collinear_vector).Length();
+                if (length == 0)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
         public override bool Equals(object obj)
         {
             Element element = obj as Element;

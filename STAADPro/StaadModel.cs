@@ -23,6 +23,7 @@ namespace STAADPro
 
         public HashSet<Element> Elements { get; set; } = new HashSet<Element>();
         public HashSet<Node> Nodes { get; set; } = new HashSet<Node>();
+        public HashSet<MergedElement> MergedElements { get; set; } = new HashSet<MergedElement>();
 
         public HashSet<Node> GetNodesById(params int[] ids)
         {
@@ -49,6 +50,31 @@ namespace STAADPro
         /// <param name="id"> id of the element instance to be retrieved</param>
         /// <returns>Element instance with the id</returns>
         public Element GetElementById(int id) => Elements.Where(n => n.Id == id).Single();
+        public void MergeElements()
+        {
+            int counter = 1;
+            foreach (Element element in Elements)
+            {
+                if (!element.inMergedElement)
+                {
+                    MergedElement mergedElement = new MergedElement(element.DirectionVector, element.PositionVector);
+                    mergedElement.Elements.Add(element);
+                    element.inMergedElement = true;
+                    for (int i = counter; i < Elements.Count; i++)
+                    {
+                        Element other_element = Elements.ElementAt(i);
+                        if (element.IsCollinear(other_element))
+                        {
+                            mergedElement.Elements.Add(other_element);
+                            other_element.inMergedElement = true;
+                        }
+                    }
+                    MergedElements.Add(mergedElement);
+                }
+             
+                counter++;
+            }
+        }
 
         /// <summary>
         /// Retrieves all elements from active StaadPro application, then creates Element objects and stores them in Hashset<Element> Elements Property.
